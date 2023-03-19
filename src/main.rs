@@ -86,6 +86,11 @@ fn not_found() -> Value {
     json!("Not found!")
 }
 
+#[catch(401)]
+fn unauthorized() -> Value {
+    json!("Unauthorized!")
+}
+
 #[rocket::main]
 async fn main() {
     let _ = rocket::build()
@@ -97,7 +102,8 @@ async fn main() {
             delete_rustacean
         ])
         .register("/", catchers![
-            not_found
+            not_found,
+            unauthorized,
         ])
         .launch()
         .await;
