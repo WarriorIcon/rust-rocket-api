@@ -9,8 +9,11 @@ pub struct BasicAuth {
     pub password: String,
 }
 // parse header. Basic (unsafe) auth via base64
+// test with: curl 127.0.0.1:8000/rustaceans -H 'Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=='
+// Function will accept the header value from the key value pair, i.e 'Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=='
 impl BasicAuth {
     fn from_authorization_header(header: &str) -> Option<BasicAuth> {
+        // take header value and split type of authorizations from credentials
         let split = header.split_whitespace().collect::<Vec<_>>();
         if split.len() != 2 {
             return None;
