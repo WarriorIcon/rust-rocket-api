@@ -51,6 +51,7 @@ impl<'r> FromRequest<'r> for BasicAuth {
     type Error = ();
 
     async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
+        // get_one will return the header value
         let auth_header = request.headers().get_one("Authorization");
         if let Some(auth_header) = auth_header {
             if let Some(auth) = Self::from_authorization_header(auth_header) {
@@ -61,7 +62,6 @@ impl<'r> FromRequest<'r> for BasicAuth {
         Outcome::Failure((Status::Unauthorized, ()))
     }
 }
-
 
 #[get("/rustaceans")]
 fn get_rustaceans(_auth: BasicAuth) -> Value {
