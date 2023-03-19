@@ -45,7 +45,10 @@ impl BasicAuth {
     }
 }
 
-// Guard
+// Defining Guards to be called with endpoints ...
+// from_request function accepts the Request object from Rocket and returns an Outcome
+// The outcome is either a Success or a Failure
+// In the case of success, return the BasicAuth struct
 #[rocket::async_trait]
 impl<'r> FromRequest<'r> for BasicAuth {
     type Error = ();
