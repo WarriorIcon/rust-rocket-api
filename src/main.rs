@@ -1,10 +1,15 @@
 #[macro_use] extern crate rocket;
+extern crate diesel;
+#[macro_use] extern crate rocket_sync_db_pools;
 
 mod auth;
 
 use auth::BasicAuth;
 use rocket::serde::json::{Value, json};
 use rocket::response::status;
+
+struct DbConn(diesel::SqliteConnection);
+#[database("sqlite")]
 
 // test routes with curl 127.0.0.1:8000/rustaceans/1 -X DELETE -H 'Content-type: application/json'
 #[get("/rustaceans")]
