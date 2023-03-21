@@ -1,2 +1,3 @@
+# Store configurations here, i.e for dev vs prod database
 [global.databases]
 sqlite = { url = "./database.sqlite" }

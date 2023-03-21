@@ -8,12 +8,12 @@ use auth::BasicAuth;
 use rocket::serde::json::{Value, json};
 use rocket::response::status;
 
-struct DbConn(diesel::SqliteConnection);
 #[database("sqlite")]
+struct DbConn(diesel::SqliteConnection);
 
 // test routes with curl 127.0.0.1:8000/rustaceans/1 -X DELETE -H 'Content-type: application/json'
 #[get("/rustaceans")]
-fn get_rustaceans(_auth: BasicAuth) -> Value {
+fn get_rustaceans(_auth: BasicAuth, _db: DbConn) -> Value {
     json!([{ "id": 1, "name": "John Doe" }, { "id": 2, "name": "John Doe again" }])
 }
 #[get("/rustaceans/<id>")]
@@ -57,6 +57,7 @@ async fn main() {
             not_found,
             unauthorized,
         ])
+        .attach(DbConn::fairing())
         .launch()
         .await;
 }
