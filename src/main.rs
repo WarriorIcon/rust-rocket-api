@@ -6,7 +6,10 @@ mod auth;
 mod models;
 mod schema;
 
+use diesel::prelude::*;
 use auth::BasicAuth;
+use models::Rustacean;
+use schema::rustaceans;
 use rocket::serde::json::{Value, json};
 use rocket::response::status;
 
@@ -14,10 +17,14 @@ use rocket::response::status;
 struct DbConn(diesel::SqliteConnection);
 
 // test routes with curl 127.0.0.1:8000/rustaceans/1 -X DELETE -H 'Content-type: application/json'
+// test route with curl 127.0.0.1:8000/rustaceans -H 'Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=='
+// .limit limits the query to x records. .load translates the records into the rustacean model
+// .expect() a panic with an error message if reading the DB fails.
 #[get("/rustaceans")]
-async fn get_rustaceans(_auth: BasicAuth, _db: DbConn) -> Value {
+async fn get_rustaceans(_auth: BasicAuth, db: DbConn) -> Value {
     db.run(|c| {
-        schema::rustaceans::table.limit(100).load.().expect("Failed to read db")
+        let result = rustaceans::table.limit(100).load::<Rustacean>(c).expect("Failed to read db");
+        json!(result)
     }).await
 }
 #[get("/rustaceans/<id>")]
