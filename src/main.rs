@@ -10,7 +10,7 @@ use diesel::prelude::*;
 use auth::BasicAuth;
 use models::{Rustacean, NewRustacean};
 use schema::rustaceans;
-use rocket::serde::json::{Value, json, Json};
+use rocket::serde::json::{Value, json, Json,};
 use rocket::response::status;
 
 #[database("sqlite")]
@@ -28,9 +28,15 @@ async fn get_rustaceans(_auth: BasicAuth, db: DbConn) -> Value {
     }).await
 }
 #[get("/rustaceans/<id>")]
-fn view_rustacean(id: i32, _auth: BasicAuth) -> Value {
-    json!({"id": id, "name": "John Doe", "email": "john@doe.com"})
+async fn view_rustacean(id: i32, _auth: BasicAuth, db: DbConn) -> Value {
+    db.run(move |c| {
+        let rustacean = rustaceans::table.find(id)
+        .get_result::<Rustacean>(c)
+        .expect("Failed retreiving rustacean row.");
+        json!(rustacean)
+    }).await
 }
+
 #[post("/rustaceans", format = "json", data = "<new_rustacean>")]
 async fn create_rustacean(_auth: BasicAuth, db: DbConn, new_rustacean: Json<NewRustacean>) -> Value {
     db.run(|c| {
@@ -38,13 +44,19 @@ async fn create_rustacean(_auth: BasicAuth, db: DbConn, new_rustacean: Json<NewR
         .values(new_rustacean.into_inner())
         .execute(c)
         .expect("Failed Inserting rustacean entry");
-        // return resukt
+        // return result
         json!(result)
     }).await
 }
-#[put("/rustaceans/<id>", format = "json")]
-fn update_rustacean(id: i32, _auth: BasicAuth) -> Value {
-    json!({"id": id, "name": "John Doe", "email": "john@doe.com"})
+#[put("/rustaceans/<id>", format = "json", data = "<rustacean>")]
+async fn update_rustacean(id: i32, _auth: BasicAuth, db: DbConn, rustacean: Json<Rustacean>) -> Value {
+    db.run(move |c| {
+        let result = diesel::update(rustaceans::table.find(id)).set((
+            rustaceans::email.eq(rustacean.email.to_owned()),
+            rustaceans::name.eq(rustacean.name.to_owned())
+        )).execute(c).expect("Failed updating rustacean entry");
+        json!(result)
+    }).await
 }
 #[delete("/rustaceans/<_id>")]
 fn delete_rustacean(_id: i32, _auth: BasicAuth) -> status::NoContent {
@@ -61,6 +73,11 @@ fn unauthorized() -> Value {
     json!("Unauthorized!")
 }
 
+#[catch(422)]
+fn unprocessable() -> Value {
+    json!({"error" : "422 - Invalid entity. Probably some missing fields?"})
+}
+
 #[rocket::main]
 async fn main() {
     let _ = rocket::build()
@@ -74,6 +91,7 @@ async fn main() {
         .register("/", catchers![
             not_found,
             unauthorized,
+            unprocessable,
         ])
         .attach(DbConn::fairing())
         .launch()
